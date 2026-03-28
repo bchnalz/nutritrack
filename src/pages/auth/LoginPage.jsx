@@ -26,7 +26,7 @@ export function LoginPage() {
 
   if (!isSupabaseConfigured()) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/30 p-4">
+      <div className="app-hero-split-bg app-hero-split-bg--full flex min-h-screen min-h-dvh items-center justify-center p-4">
         <Card className="w-full max-w-sm animate-card-in border border-border/50 shadow-xl shadow-primary/5">
           <CardHeader className="space-y-2 pb-2 pt-8 text-center">
             <CardTitle className="text-lg font-bold leading-snug tracking-tight">{APP_DISPLAY_NAME}</CardTitle>
@@ -42,7 +42,7 @@ export function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/30">
+      <div className="app-hero-split-bg app-hero-split-bg--full flex min-h-screen min-h-dvh items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     )
@@ -55,7 +55,7 @@ export function LoginPage() {
 
   if (session && !loading && !profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/30 p-4">
+      <div className="app-hero-split-bg app-hero-split-bg--full flex min-h-screen min-h-dvh items-center justify-center p-4">
         <Card className="w-full max-w-sm animate-card-in border border-border/50 shadow-xl shadow-primary/5">
           <CardHeader className="space-y-2 pb-2 pt-8 text-center">
             <CardTitle className="text-xl font-bold tracking-tight">Profil tidak ditemukan</CardTitle>
@@ -97,7 +97,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/30 p-4">
+    <div className="app-hero-split-bg app-hero-split-bg--full flex min-h-screen min-h-dvh items-center justify-center p-4">
       <div className="w-full max-w-sm animate-card-in">
         <Card className="border border-border/50 shadow-xl shadow-primary/5">
           <CardHeader className="space-y-3 px-8 pb-2 pt-8 text-center">

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Cookie, Coffee, Moon, Plus, Sparkles, Sun, Trash2 } from 'lucide-react'
+import { ChevronDown, Cookie, Coffee, Moon, Plus, Sparkles, Sun, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -105,18 +105,8 @@ function FoodNameSuggestField({
         }}
         onBlur={onCloseRowBlur}
       />
-      {open ? (
+      {open && filtered.length > 0 ? (
         <div className={foodSuggestPanelClass} role="listbox">
-          {suggestionNames.length === 0 ? (
-            <p className="px-3 py-2.5 text-xs text-muted-foreground">
-              Belum ada saran dari log Anda. Lanjut mengetik nama makanan.
-            </p>
-          ) : null}
-          {suggestionNames.length > 0 && filtered.length === 0 ? (
-            <p className="px-3 py-2.5 text-xs text-muted-foreground">
-              Tidak ada saran yang cocok. Lanjut dengan nama yang Anda ketik.
-            </p>
-          ) : null}
           {filtered.map((n, idx) => (
             <button
               key={`${n}-${idx}`}
@@ -139,6 +129,15 @@ function emptyRow() {
   return { id: crypto.randomUUID(), nama: '', jumlah: '', unitId: '' }
 }
 
+/** Live summary for collapsed row header, e.g. "sate 1 bungkus". */
+function foodRowSummaryLine(r, unitMap) {
+  const nama = r.nama.trim()
+  const jum = String(r.jumlah ?? '').trim()
+  const unitNama = r.unitId ? String(unitMap[r.unitId]?.nama ?? '').trim() : ''
+  const parts = [nama, jum, unitNama].filter(Boolean)
+  return parts.length ? parts.join(' ') : 'Item baru'
+}
+
 export function FoodEntryForm({ userId }) {
   const qc = useQueryClient()
   const { data: units = [] } = useFoodUnits()
@@ -146,11 +145,13 @@ export function FoodEntryForm({ userId }) {
   const { data: todaySlots = [], isPending: slotsPending } = useTodayFoodLogSlots(userId)
 
   const [waktu, setWaktu] = useState('pagi')
-  const [rows, setRows] = useState([emptyRow()])
+  const [rows, setRows] = useState(() => [emptyRow()])
+  const [expandedRowId, setExpandedRowId] = useState(() => rows[0].id)
   const [suggestionsOpenRowId, setSuggestionsOpenRowId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const resultRef = useRef(null)
 
   const filledSlotsToday = useMemo(
     () => new Set(todaySlots.map((r) => r.waktu_makan).filter(Boolean)),
@@ -171,6 +172,24 @@ export function FoodEntryForm({ userId }) {
 
   const unitMap = useMemo(() => Object.fromEntries(units.map((u) => [u.id, u])), [units])
 
+  useEffect(() => {
+    setExpandedRowId((ex) => {
+      if (!rows.length) return ex
+      if (rows.some((row) => row.id === ex)) return ex
+      return rows[0].id
+    })
+  }, [rows])
+
+  useEffect(() => {
+    if (!result) return
+    const el = resultRef.current
+    if (!el) return
+    const id = requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [result])
+
   function setRow(i, patch) {
     setRows((prev) => prev.map((r, j) => (j === i ? { ...r, ...patch } : r)))
   }
@@ -189,7 +208,10 @@ export function FoodEntryForm({ userId }) {
   }
 
   function addRow() {
-    setRows((prev) => [...prev, emptyRow()])
+    const nr = emptyRow()
+    setRows((prev) => [...prev, nr])
+    setExpandedRowId(nr.id)
+    setSuggestionsOpenRowId(null)
   }
 
   function removeRow(i) {
@@ -309,7 +331,9 @@ export function FoodEntryForm({ userId }) {
       qc.invalidateQueries({ queryKey: ['food_logs', userId] })
       qc.invalidateQueries({ queryKey: ['food_logs_today_slots', userId] })
       qc.invalidateQueries({ queryKey: ['food_name_suggestions'] })
-      setRows([emptyRow()])
+      const nextRow = emptyRow()
+      setRows([nextRow])
+      setExpandedRowId(nextRow.id)
       toast.success('Data tersimpan.')
     } catch (e) {
       console.error(e)
@@ -367,241 +391,27 @@ export function FoodEntryForm({ userId }) {
         ) : null}
       </section>
 
-      <section className="space-y-2 border-t border-border/60 pt-3 sm:pt-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="min-w-0 space-y-0.5">
-            <h2 className="text-sm font-semibold leading-tight tracking-tight">
-              Daftar makanan
-            </h2>
-            <p className={typeMuted}>Satu baris = satu jenis makanan beserta porsi dan satuan.</p>
-          </div>
-          <Badge
-            variant="secondary"
-            className="w-fit shrink-0 text-sm font-medium tabular-nums transition-colors duration-200"
-          >
-            {rows.length} item
-          </Badge>
-        </div>
-
-        <div
-          className="hidden gap-2 text-sm font-medium leading-none text-muted-foreground sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_36px] sm:items-center sm:px-0.5"
-          aria-hidden
-        >
-          <span>Makanan</span>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="w-[7.25rem] shrink-0 sm:text-left">Jumlah</span>
-            <span className="min-w-0 flex-1">Satuan</span>
-          </div>
-          <span className="sr-only">Hapus</span>
-        </div>
-
-        <div className="space-y-2.5">
-          {rows.map((r, i) => (
-            <div
-              key={r.id}
-              role="group"
-              aria-label={`Entri makanan ke-${i + 1}`}
-              className={cn(
-                'group flex overflow-visible rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm',
-                'ring-1 ring-border/30 dark:ring-border/50',
-                'transition-[border-color,box-shadow,ring-color] duration-200',
-                'motion-safe:hover:border-primary/30 motion-safe:hover:shadow-md motion-safe:hover:ring-primary/20',
-                'focus-within:border-primary/35 focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/35',
-              )}
-            >
-              <div
-                className="w-1 shrink-0 bg-gradient-to-b from-primary/55 via-primary/35 to-primary/15 motion-safe:transition-opacity motion-safe:group-hover:opacity-100 sm:w-1.5"
-                aria-hidden
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2 border-b border-border/50 bg-muted/25 px-3 py-2 sm:hidden">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Badge
-                      variant="outline"
-                      className="h-7 min-w-7 justify-center rounded-lg border-primary/25 bg-background/80 px-0 font-mono text-xs font-semibold tabular-nums text-primary"
-                    >
-                      {i + 1}
-                    </Badge>
-                    <span className="truncate text-sm font-medium text-muted-foreground">
-                      Item makanan
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => removeRow(i)}
-                    aria-label="Hapus baris"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="p-3 sm:p-3.5">
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_36px] sm:items-end">
-                    <div className="grid gap-1.5">
-                      <Label className={cn(typeLabel, 'sm:sr-only')} htmlFor={`food-name-${r.id}`}>
-                        Makanan
-                      </Label>
-                      <FoodNameSuggestField
-                        inputId={`food-name-${r.id}`}
-                        value={r.nama}
-                        suggestionNames={suggestionNames}
-                        open={suggestionsOpenRowId === r.id}
-                        onOpen={() => setSuggestionsOpenRowId(r.id)}
-                        onClosePanel={() =>
-                          setSuggestionsOpenRowId((cur) => (cur === r.id ? null : cur))
-                        }
-                        onCloseRowBlur={() => {
-                          setTimeout(() => {
-                            setSuggestionsOpenRowId((cur) => (cur === r.id ? null : cur))
-                          }, 200)
-                        }}
-                        onPick={(nama) => {
-                          setRow(i, { nama })
-                          setSuggestionsOpenRowId(null)
-                        }}
-                        onChangeNama={(nama) => setRow(i, { nama })}
-                      />
-                    </div>
-                    <div className="flex min-w-0 flex-wrap items-end gap-2">
-                      <div className="grid shrink-0 gap-1.5">
-                        <Label className={cn(typeLabel, 'sm:sr-only')} htmlFor={`food-qty-${r.id}`}>
-                          Jumlah
-                        </Label>
-                        <div className={foodQtyStepperShellClass}>
-                          <button
-                            type="button"
-                            className={foodQtyStepperBtnClass}
-                            onClick={() => adjustRowJumlah(i, -1)}
-                            aria-label="Kurangi jumlah"
-                          >
-                            -
-                          </button>
-                          <Input
-                            id={`food-qty-${r.id}`}
-                            type="number"
-                            inputMode="decimal"
-                            step="any"
-                            min={0}
-                            placeholder="0"
-                            className={foodQtyStepperInnerInputClass}
-                            value={r.jumlah}
-                            onChange={(e) => setRow(i, { jumlah: e.target.value })}
-                            onFocus={(e) => e.target.select()}
-                          />
-                          <button
-                            type="button"
-                            className={foodQtyStepperBtnClass}
-                            onClick={() => adjustRowJumlah(i, 1)}
-                            aria-label="Tambah jumlah"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                      <div className="grid min-w-0 flex-1 basis-[10rem] gap-1.5">
-                        <Label className={cn(typeLabel, 'sm:sr-only')} htmlFor={`food-unit-${r.id}`}>
-                          Satuan
-                        </Label>
-                        <Select
-                          value={r.unitId || undefined}
-                          onValueChange={(v) => setRow(i, { unitId: v })}
-                        >
-                          <SelectTrigger
-                            id={`food-unit-${r.id}`}
-                            className={cn(
-                              foodRowControlShell,
-                              foodRowSelectFocus,
-                              foodRowSelectMobileType,
-                              'min-w-0 w-full',
-                            )}
-                          >
-                            <SelectValue placeholder="Satuan" />
-                          </SelectTrigger>
-                        <SelectContent align="end" className="text-xs">
-                          {units.map((u) => (
-                            <SelectItem key={u.id} value={u.id} className="text-xs">
-                                {u.nama}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="hidden justify-end sm:flex">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => removeRow(i)}
-                        aria-label="Hapus baris"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full text-sm transition-all duration-200 motion-safe:active:scale-[0.99] sm:w-auto"
-          onClick={addRow}
-        >
-          <Plus className="h-4 w-4" />
-          Tambah makanan
-        </Button>
-      </section>
-
-      <div className="flex flex-col gap-1.5 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-        {error ? (
-          <p
-            className="text-sm leading-normal text-destructive order-2 sm:order-1 sm:mr-2 sm:flex-1 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : (
-          <span className="order-2 hidden sm:order-1 sm:block sm:flex-1" />
-        )}
-        <Button
-          type="button"
-          className="order-1 h-9 w-full text-sm transition-all duration-200 motion-safe:active:scale-[0.99] sm:order-2 sm:w-auto sm:min-w-[11rem]"
-          disabled={loading || slotsPending || allSlotsFilledToday || filledSlotsToday.has(waktu)}
-          onClick={handleAnalyze}
-        >
-          <Sparkles className="h-4 w-4" />
-          {loading ? 'Menganalisa & menyimpan…' : 'Analisa & simpan'}
-        </Button>
-      </div>
-
       {result ? (
-        <Card
-          className={cn(
-            'border-primary/20 bg-primary/5 shadow-sm',
-            'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300 motion-safe:fill-mode-both',
-          )}
+        <div
+          ref={resultRef}
+          id="food-entry-result"
+          tabIndex={-1}
+          className="scroll-mt-3 outline-none sm:scroll-mt-4"
         >
+          <Card
+            className={cn(
+              'border-primary/20 bg-primary/5 shadow-sm',
+              'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300 motion-safe:fill-mode-both',
+            )}
+          >
           <CardHeader className="space-y-1 p-4 pb-2 sm:p-4 sm:pb-2">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-              <div className="min-w-0 space-y-0.5">
-                <CardTitle className="text-sm font-semibold leading-tight tracking-tight">
-                  Tersimpan
-                </CardTitle>
-                <CardDescription className="text-sm leading-normal">
-                  Estimasi kalori untuk entri yang baru saja Anda simpan.
-                </CardDescription>
-              </div>
-              <Badge className="w-fit shrink-0 px-2.5 py-0.5 text-sm font-medium tabular-nums">
-                Total <KaloriValue value={result.total} />
-              </Badge>
+            <div className="min-w-0 space-y-0.5">
+              <CardTitle className="text-sm font-semibold leading-tight tracking-tight">
+                Tersimpan
+              </CardTitle>
+              <CardDescription className="text-sm leading-normal">
+                Estimasi kalori untuk entri yang baru saja Anda simpan.
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-2 p-4 pt-0 sm:space-y-2.5">
@@ -638,8 +448,251 @@ export function FoodEntryForm({ userId }) {
             </div>
             <CalorieDisclaimer />
           </CardContent>
-        </Card>
+          </Card>
+          <div
+            className="mt-2 flex flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5 border-t border-border/50 pt-2 text-sm"
+            aria-live="polite"
+          >
+            <span className="font-medium text-muted-foreground">Total estimasi</span>
+            <KaloriValue
+              value={result.total}
+              className="text-base font-semibold text-primary"
+              unitClassName="text-primary/70"
+            />
+          </div>
+        </div>
       ) : null}
+
+      <section className="space-y-2 border-t border-border/60 pt-3 sm:pt-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div className="min-w-0 space-y-0.5">
+            <h2 className="text-sm font-semibold leading-tight tracking-tight">
+              Daftar makanan
+            </h2>
+            <p className={typeMuted}>Satu baris = satu jenis makanan beserta porsi dan satuan.</p>
+          </div>
+          <Badge
+            variant="secondary"
+            className="w-fit shrink-0 text-sm font-medium tabular-nums transition-colors duration-200"
+          >
+            {rows.length} item
+          </Badge>
+        </div>
+
+        <div
+          className="hidden gap-2 text-sm font-medium leading-none text-muted-foreground sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:px-0.5"
+          aria-hidden
+        >
+          <span>Makanan</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="w-[7.25rem] shrink-0 sm:text-left">Jumlah</span>
+            <span className="min-w-0 flex-1">Satuan</span>
+          </div>
+        </div>
+
+        <div className="space-y-2.5">
+          {rows.map((r, i) => {
+            const isExpanded = r.id === expandedRowId
+            const summary = foodRowSummaryLine(r, unitMap)
+            return (
+              <div
+                key={r.id}
+                role="group"
+                aria-label={`Entri makanan ke-${i + 1}`}
+                className={cn(
+                  'group flex overflow-visible rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm',
+                  'ring-1 ring-border/30 dark:ring-border/50',
+                  'transition-[border-color,box-shadow,ring-color] duration-200',
+                  'motion-safe:hover:border-primary/30 motion-safe:hover:shadow-md motion-safe:hover:ring-primary/20',
+                  isExpanded &&
+                    'focus-within:border-primary/35 focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/35',
+                )}
+              >
+                <div
+                  className="w-1 shrink-0 bg-gradient-to-b from-primary/55 via-primary/35 to-primary/15 motion-safe:transition-opacity motion-safe:group-hover:opacity-100 sm:w-1.5"
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 border-b border-border/50 bg-muted/25 px-3 py-2">
+                    <Badge
+                      variant="outline"
+                      className="h-7 min-w-7 shrink-0 justify-center rounded-lg border-primary/25 bg-background/80 px-0 font-mono text-xs font-semibold tabular-nums text-primary"
+                    >
+                      {i + 1}
+                    </Badge>
+                    <button
+                      type="button"
+                      id={`food-row-label-${r.id}`}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => {
+                        setExpandedRowId(r.id)
+                        setSuggestionsOpenRowId(null)
+                      }}
+                      aria-expanded={isExpanded}
+                      aria-controls={`food-row-panel-${r.id}`}
+                    >
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                        {summary}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                          isExpanded && 'rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:h-9 sm:w-9"
+                      onClick={() => removeRow(i)}
+                      aria-label="Hapus baris"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {isExpanded ? (
+                    <div
+                      id={`food-row-panel-${r.id}`}
+                      role="region"
+                      aria-labelledby={`food-row-label-${r.id}`}
+                      className="p-3 sm:p-3.5"
+                    >
+                      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+                        <div className="grid gap-1.5">
+                          <Label className={cn(typeLabel, 'sm:sr-only')} htmlFor={`food-name-${r.id}`}>
+                            Makanan
+                          </Label>
+                          <FoodNameSuggestField
+                            inputId={`food-name-${r.id}`}
+                            value={r.nama}
+                            suggestionNames={suggestionNames}
+                            open={suggestionsOpenRowId === r.id}
+                            onOpen={() => setSuggestionsOpenRowId(r.id)}
+                            onClosePanel={() =>
+                              setSuggestionsOpenRowId((cur) => (cur === r.id ? null : cur))
+                            }
+                            onCloseRowBlur={() => {
+                              setTimeout(() => {
+                                setSuggestionsOpenRowId((cur) => (cur === r.id ? null : cur))
+                              }, 200)
+                            }}
+                            onPick={(nama) => {
+                              setRow(i, { nama })
+                              setSuggestionsOpenRowId(null)
+                            }}
+                            onChangeNama={(nama) => setRow(i, { nama })}
+                          />
+                        </div>
+                        <div className="flex min-w-0 flex-wrap items-end gap-2">
+                          <div className="grid shrink-0 gap-1.5">
+                            <Label className={cn(typeLabel, 'sm:sr-only')} htmlFor={`food-qty-${r.id}`}>
+                              Jumlah
+                            </Label>
+                            <div className={foodQtyStepperShellClass}>
+                              <button
+                                type="button"
+                                className={foodQtyStepperBtnClass}
+                                onClick={() => adjustRowJumlah(i, -1)}
+                                aria-label="Kurangi jumlah"
+                              >
+                                -
+                              </button>
+                              <Input
+                                id={`food-qty-${r.id}`}
+                                type="number"
+                                inputMode="decimal"
+                                step="any"
+                                min={0}
+                                placeholder="0"
+                                className={foodQtyStepperInnerInputClass}
+                                value={r.jumlah}
+                                onChange={(e) => setRow(i, { jumlah: e.target.value })}
+                                onFocus={(e) => e.target.select()}
+                              />
+                              <button
+                                type="button"
+                                className={foodQtyStepperBtnClass}
+                                onClick={() => adjustRowJumlah(i, 1)}
+                                aria-label="Tambah jumlah"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid min-w-0 flex-1 basis-[10rem] gap-1.5">
+                            <Label className={cn(typeLabel, 'sm:sr-only')} htmlFor={`food-unit-${r.id}`}>
+                              Satuan
+                            </Label>
+                            <Select
+                              value={r.unitId || undefined}
+                              onValueChange={(v) => setRow(i, { unitId: v })}
+                            >
+                              <SelectTrigger
+                                id={`food-unit-${r.id}`}
+                                className={cn(
+                                  foodRowControlShell,
+                                  foodRowSelectFocus,
+                                  foodRowSelectMobileType,
+                                  'min-w-0 w-full',
+                                )}
+                              >
+                                <SelectValue placeholder="Satuan" />
+                              </SelectTrigger>
+                              <SelectContent align="end" className="text-xs">
+                                {units.map((u) => (
+                                  <SelectItem key={u.id} value={u.id} className="text-xs">
+                                    {u.nama}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full text-sm transition-all duration-200 motion-safe:active:scale-[0.99] sm:w-auto"
+          onClick={addRow}
+        >
+          <Plus className="h-4 w-4" />
+          Tambah makanan
+        </Button>
+      </section>
+
+      <div className="flex flex-col gap-1.5 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+        {error ? (
+          <p
+            className="text-sm leading-normal text-destructive order-2 sm:order-1 sm:mr-2 sm:flex-1 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : (
+          <span className="order-2 hidden sm:order-1 sm:block sm:flex-1" />
+        )}
+        <Button
+          type="button"
+          className="order-1 h-9 w-full text-sm transition-all duration-200 motion-safe:active:scale-[0.99] sm:order-2 sm:w-auto sm:min-w-[11rem]"
+          disabled={loading || slotsPending || allSlotsFilledToday || filledSlotsToday.has(waktu)}
+          onClick={handleAnalyze}
+        >
+          <Sparkles className="h-4 w-4" />
+          {loading ? 'Menganalisa & menyimpan…' : 'Analisa & simpan'}
+        </Button>
+      </div>
     </div>
   )
 }

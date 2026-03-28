@@ -2,112 +2,98 @@
 @import "react-day-picker/style.css";
 @plugin "tailwindcss-animate";
 
-/* Soft white + green / apricot / navy palette */
+/* Warm teal/emerald theme (Dapurasri-aligned) */
 @theme {
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
   --color-background: hsl(0 0% 100%);
-  --color-sidebar: hsl(215 32% 97%);
-  --color-sidebar-foreground: hsl(222 38% 18%);
+  --color-sidebar: hsl(168 30% 97%);
+  --color-sidebar-foreground: hsl(180 15% 15%);
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222 38% 18%);
-  --color-foreground: hsl(222 38% 18%);
-  --color-primary: hsl(152 36% 38%);
+  --color-card-foreground: hsl(180 15% 15%);
+  --color-foreground: hsl(180 15% 15%);
+  --color-primary: hsl(168 76% 36%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(32 46% 94%);
-  --color-secondary-foreground: hsl(222 34% 22%);
-  --color-muted: hsl(210 26% 96%);
-  --color-muted-foreground: hsl(222 14% 42%);
-  --color-accent: hsl(28 42% 93%);
-  --color-accent-foreground: hsl(222 34% 20%);
+  --color-secondary: hsl(168 45% 92%);
+  --color-secondary-foreground: hsl(168 60% 20%);
+  --color-muted: hsl(168 25% 94%);
+  --color-muted-foreground: hsl(180 10% 42%);
+  --color-accent: hsl(168 50% 88%);
+  --color-accent-foreground: hsl(168 60% 18%);
   --color-destructive: hsl(0 72% 48%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(215 22% 90%);
-  --color-input: hsl(215 20% 92%);
-  --color-ring: hsl(152 36% 38%);
+  --color-border: hsl(168 20% 88%);
+  --color-input: hsl(168 20% 90%);
+  --color-ring: hsl(168 76% 36%);
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222 38% 18%);
-  --color-table-header: hsl(210 28% 95%);
-  --color-table-header-foreground: hsl(222 34% 22%);
-  --color-table-row-hover: hsl(152 18% 97%);
-  --color-table-line: hsl(215 18% 88%);
+  --color-popover-foreground: hsl(180 15% 15%);
+  --color-table-header: hsl(168 45% 92%);
+  --color-table-header-foreground: hsl(168 60% 20%);
+  --color-table-row-hover: hsl(168 30% 96%);
+  --color-table-line: hsl(168 20% 86%);
 }
 
 .dark {
-  --color-background: hsl(222 28% 11%);
-  --color-foreground: hsl(210 25% 94%);
-  --color-sidebar: hsl(222 26% 13%);
-  --color-sidebar-foreground: hsl(210 22% 92%);
-  --color-card: hsl(222 24% 14%);
-  --color-card-foreground: hsl(210 25% 94%);
-  --color-primary: hsl(152 34% 52%);
-  --color-primary-foreground: hsl(222 28% 12%);
-  --color-secondary: hsl(32 22% 20%);
-  --color-secondary-foreground: hsl(38 40% 88%);
-  --color-muted: hsl(222 18% 18%);
-  --color-muted-foreground: hsl(215 14% 65%);
-  --color-accent: hsl(28 26% 22%);
-  --color-accent-foreground: hsl(38 36% 90%);
+  --color-background: hsl(24 20% 10%);
+  --color-foreground: hsl(34 28% 90%);
+  --color-sidebar: hsl(24 24% 13%);
+  --color-sidebar-foreground: hsl(34 26% 90%);
+  --color-card: hsl(24 22% 14%);
+  --color-card-foreground: hsl(34 28% 90%);
+  --color-primary: hsl(29 52% 44%);
+  --color-primary-foreground: hsl(32 30% 96%);
+  --color-secondary: hsl(24 16% 22%);
+  --color-secondary-foreground: hsl(34 26% 90%);
+  --color-muted: hsl(24 14% 18%);
+  --color-muted-foreground: hsl(31 14% 68%);
+  --color-accent: hsl(24 18% 24%);
+  --color-accent-foreground: hsl(34 24% 92%);
   --color-destructive: hsl(0 72% 58%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(222 16% 24%);
-  --color-input: hsl(222 16% 20%);
-  --color-ring: hsl(152 34% 52%);
-  --color-popover: hsl(222 24% 14%);
-  --color-popover-foreground: hsl(210 25% 94%);
-  --color-table-header: hsl(222 20% 18%);
-  --color-table-header-foreground: hsl(210 25% 94%);
-  --color-table-row-hover: hsl(222 18% 17%);
-  --color-table-line: hsl(222 14% 26%);
-  /* Stacked polygon facets (dark) */
-  --app-poly-floor: var(--color-background);
-  --app-poly-a: color-mix(in oklab, white 9%, var(--color-background));
-  --app-poly-b: color-mix(in oklab, var(--color-primary) 24%, var(--color-background));
-  --app-poly-c: color-mix(in oklab, hsl(222 46% 46%) 20%, var(--color-background));
-  --app-poly-d: color-mix(in oklab, hsl(32 54% 48%) 18%, var(--color-background));
-  --app-poly-e: color-mix(
-    in oklab,
-    hsl(222 38% 40%) 16%,
-    color-mix(in oklab, var(--color-primary) 14%, var(--color-background))
-  );
-  --app-poly-f: color-mix(in oklab, var(--color-secondary) 72%, var(--color-background));
-  --app-poly-g: color-mix(in oklab, var(--color-primary) 20%, color-mix(in oklab, var(--color-muted) 45%, var(--color-background)));
+  --color-border: hsl(24 12% 28%);
+  --color-input: hsl(24 12% 22%);
+  --color-ring: hsl(29 52% 44%);
+  --color-popover: hsl(24 22% 14%);
+  --color-popover-foreground: hsl(34 28% 90%);
+  --color-table-header: hsl(24 18% 20%);
+  --color-table-header-foreground: hsl(34 28% 90%);
+  --color-table-row-hover: hsl(24 16% 18%);
+  --color-table-line: hsl(24 12% 26%);
 }
 
 :root {
   --radius: 0.5rem;
-  /* Stacked polygon facets (light): white / green / navy / apricot shards */
-  --app-poly-floor: color-mix(in oklab, var(--color-muted) 35%, white);
-  --app-poly-a: hsl(0 0% 100%);
-  --app-poly-b: color-mix(in oklab, var(--color-primary) 17%, white);
-  --app-poly-c: color-mix(in oklab, hsl(222 38% 34%) 12%, white);
-  --app-poly-d: color-mix(in oklab, hsl(32 62% 58%) 13%, white);
-  --app-poly-e: color-mix(
-    in oklab,
-    hsl(222 32% 38%) 8%,
-    color-mix(in oklab, var(--color-primary) 9%, white)
-  );
-  --app-poly-f: color-mix(in oklab, var(--color-secondary) 75%, white);
-  --app-poly-g: color-mix(in oklab, var(--color-primary) 13%, var(--color-secondary));
+  /* Two-tone split hero (light): primary-tint vs secondary-tint on base */
+  --app-hero-split-a: color-mix(in oklab, var(--color-primary) 13%, var(--color-background));
+  --app-hero-split-b: color-mix(in oklab, var(--color-secondary) 42%, var(--color-background));
 }
 
-/*
- * Polygonal stack: conic wedges (hard angle cuts) + one diagonal linear facet.
- * Last image in list paints first (rear); first image paints on top.
- */
-.app-page-split-hero {
-  background-color: var(--app-poly-floor);
-  background-image:
-    conic-gradient(from 218deg at 0% 0%, var(--app-poly-a) 0deg 71deg, transparent 71deg),
-    conic-gradient(from 32deg at 100% 0%, var(--app-poly-b) 0deg 74deg, transparent 74deg),
-    conic-gradient(from 252deg at 100% 100%, var(--app-poly-c) 0deg 64deg, transparent 64deg),
-    conic-gradient(from 118deg at 0% 100%, var(--app-poly-d) 0deg 60deg, transparent 60deg),
-    conic-gradient(from 168deg at 78% 32%, var(--app-poly-e) 0deg 102deg, transparent 102deg),
-    linear-gradient(124deg, var(--app-poly-f) 0%, var(--app-poly-f) 50%, var(--app-poly-g) 50%, var(--app-poly-g) 100%);
+html.dark {
+  --app-hero-split-a: color-mix(in oklab, var(--color-primary) 16%, var(--color-background));
+  --app-hero-split-b: color-mix(in oklab, var(--color-secondary) 38%, var(--color-background));
+}
+
+/* Diagonal two-tone band at top of scroll area; rest is solid background */
+.app-hero-split-bg {
+  background-color: var(--color-background);
+  background-image: linear-gradient(
+    118deg,
+    var(--app-hero-split-a) 0%,
+    var(--app-hero-split-a) 50.2%,
+    var(--app-hero-split-b) 50.2%,
+    var(--app-hero-split-b) 100%
+  );
+  background-size: 100% min(52vh, 560px);
+  background-position: top center;
   background-repeat: no-repeat;
+}
+
+/* Full-viewport split (e.g. login) */
+.app-hero-split-bg--full {
   background-size: 100% 100%;
+  background-attachment: fixed;
 }
 
 @layer base {

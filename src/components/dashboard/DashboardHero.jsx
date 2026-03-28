@@ -91,7 +91,7 @@ export function DashboardHero({ className, bareOnMobile = false, compactLogo = f
             greetingTemplate
           )}
         </p>
-        <AdBannerCarousel />
+        {profile?.role === 'klien' ? <AdBannerCarousel /> : null}
       </div>
     </div>
   )

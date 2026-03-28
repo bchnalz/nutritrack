@@ -356,8 +356,8 @@ function MobileBottomNav() {
 export function AppShell({
   children,
   dashboardHero = false,
+  dashboardContext,
   dashboardHeroBareMobile = false,
-  dashboardHeroCompactLogo = false,
 }) {
   return (
     <div className="flex h-dvh min-h-screen overflow-hidden bg-background">
@@ -367,12 +367,9 @@ export function AppShell({
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main className="app-page-split-hero min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 pb-36 md:p-5 md:pb-5">
+        <main className="app-hero-split-bg min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 pb-36 md:p-5 md:pb-5">
           {dashboardHero ? (
-            <DashboardHero
-              bareOnMobile={dashboardHeroBareMobile}
-              compactLogo={dashboardHeroCompactLogo}
-            />
+            <DashboardHero contextLabel={dashboardContext} bareOnMobile={dashboardHeroBareMobile} />
           ) : null}
           {children}
         </main>
