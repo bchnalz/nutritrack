@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { useMeasurements } from '@/hooks/useMeasurement'
+import { useUserEvaluations } from '@/hooks/useUserEvaluations'
 import {
   Select,
   SelectContent,
@@ -40,6 +41,10 @@ const cardShell = cn('overflow-hidden border-border/70 shadow-sm', MOBILE_DASHBO
 export function MyProgress() {
   const { profile } = useAuth()
   const { data: all = [], isLoading } = useMeasurements(profile?.id, Boolean(profile?.id))
+  const { data: evaluations = [], isLoading: loadingEvals } = useUserEvaluations(
+    profile?.id,
+    Boolean(profile?.id),
+  )
   const [range, setRange] = useState('30d')
   const [metric, setMetric] = useState('berat_badan')
 
@@ -128,6 +133,72 @@ export function MyProgress() {
             </CardContent>
           </Card>
         )}
+
+        <Card className={cn('p-0', cardShell)}>
+          <CardHeader className="space-y-0 border-b border-border/60 px-4 pb-3 pt-4 text-center sm:px-5">
+            <CardTitle className="text-base font-semibold tracking-tight">Evaluasi rutin</CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+            {loadingEvals ? (
+              <div className="py-8">
+                <LoadingSpinner />
+              </div>
+            ) : evaluations.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Belum ada evaluasi.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="whitespace-nowrap px-2 text-center text-xs font-semibold uppercase tracking-wide sm:px-3 sm:text-sm">
+                        Periode
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap px-2 text-center text-xs font-semibold uppercase tracking-wide sm:px-3 sm:text-sm">
+                        Olahraga
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap px-2 text-center text-xs font-semibold uppercase tracking-wide sm:px-3 sm:text-sm">
+                        Istirahat
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap px-2 text-center text-xs font-semibold uppercase tracking-wide sm:px-3 sm:text-sm">
+                        Sayur
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap px-2 text-center text-xs font-semibold uppercase tracking-wide sm:px-3 sm:text-sm">
+                        BMI
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap px-2 text-center text-xs font-semibold uppercase tracking-wide sm:px-3 sm:text-sm">
+                        Catatan
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {evaluations.map((e) => (
+                      <TableRow key={e.id} className="max-md:text-[0.8125rem]">
+                        <TableCell className="whitespace-nowrap px-2 text-center sm:px-3">
+                          {formatDateId(e.date_from)} — {formatDateId(e.date_to)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap px-2 text-center sm:px-3">
+                          {e.exercise_freq ?? '—'}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap px-2 text-center sm:px-3">
+                          {e.sleep_enough == null ? '—' : e.sleep_enough ? 'Ya' : 'Tidak'}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap px-2 text-center tabular-nums sm:px-3">
+                          {e.veg_times_per_day == null ? '—' : formatNumberId(e.veg_times_per_day)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap px-2 text-center tabular-nums sm:px-3">
+                          {e.bmi == null ? '—' : formatNumberId(e.bmi)}
+                        </TableCell>
+                        <TableCell className="min-w-[16rem] px-2 text-left sm:px-3">
+                          {e.usage_notes ?? '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className={cn('p-0', cardShell)}>
           <CardHeader className="space-y-0 border-b border-border/60 px-4 pb-3 pt-4 text-center sm:px-5">

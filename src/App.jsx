@@ -13,6 +13,9 @@ const AdminDashboard = lazy(() =>
 const UserManagement = lazy(() =>
   import('@/pages/admin/UserManagement').then((m) => ({ default: m.UserManagement })),
 )
+const AdminUserDetail = lazy(() =>
+  import('@/pages/admin/AdminUserDetail').then((m) => ({ default: m.AdminUserDetail })),
+)
 const FoodUnitMaster = lazy(() =>
   import('@/pages/admin/FoodUnitMaster').then((m) => ({ default: m.FoodUnitMaster })),
 )
@@ -106,6 +109,14 @@ function AppRoutes() {
           element={
             <RequireAuth roles={['admin']}>
               <UserManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/users/:id"
+          element={
+            <RequireAuth roles={['admin']}>
+              <AdminUserDetail />
             </RequireAuth>
           }
         />

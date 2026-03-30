@@ -1,12 +1,14 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation } from 'react-router-dom'
 import { ClipboardList, ExternalLink } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { AppShell } from '@/components/layout/AppShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -16,22 +18,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import { FoodLogTable } from '@/components/food/FoodLogTable'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
 import { useFoodLogsForUser } from '@/hooks/useFoodLog'
 import { formatDateId, toIsoDateLocal } from '@/lib/format'
-import { compareIsoDates, inclusiveRangeEndingAt } from '@/lib/foodLogRange'
+import { compareIsoDates } from '@/lib/foodLogRange'
 import { MOBILE_DASHBOARD_CARD_SHELL } from '@/lib/pageCard'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-
-const PRESETS = [
-  { value: '7', label: '7 hari' },
-  { value: '10', label: '10 hari' },
-  { value: '14', label: '14 hari' },
-  { value: '30', label: '30 hari' },
-  { value: 'custom', label: 'Kustom (pilih tanggal)' },
-]
 
 const STAFF_LOG_STALE_MS = 10 * 60 * 1000
 
@@ -53,12 +49,18 @@ const FILTER_DATE_CLASS = cn(
 export function FoodLogMonitor() {
   const location = useLocation()
   const clientsBase = location.pathname.startsWith('/admin') ? '/admin/clients' : '/gizi/clients'
+  const { profile: staff } = useAuth()
+  const qc = useQueryClient()
 
   const [userId, setUserId] = useState('')
-  const [endDate, setEndDate] = useState(() => toIsoDateLocal(new Date()))
-  const [preset, setPreset] = useState('10')
-  const [customFrom, setCustomFrom] = useState('')
-  const [customTo, setCustomTo] = useState(() => toIsoDateLocal(new Date()))
+  const [dateFromInput, setDateFromInput] = useState('')
+  const [dateToInput, setDateToInput] = useState(() => toIsoDateLocal(new Date()))
+
+  const [exerciseFreq, setExerciseFreq] = useState('')
+  const [sleepEnough, setSleepEnough] = useState('')
+  const [vegTimesPerDay, setVegTimesPerDay] = useState('')
+  const [usageNotes, setUsageNotes] = useState('')
+  const [bmi, setBmi] = useState('')
 
   const { data: clients = [], isLoading: loadingClients } = useQuery({
     queryKey: ['staff_food_log_clients'],
@@ -75,18 +77,13 @@ export function FoodLogMonitor() {
   })
 
   const { dateFrom, dateTo } = useMemo(() => {
-    if (preset === 'custom') {
-      let a = customFrom
-      let b = customTo
-      if (a && b && compareIsoDates(a, b) > 0) {
-        ;[a, b] = [b, a]
-      }
-      return { dateFrom: a, dateTo: b }
+    let a = dateFromInput
+    let b = dateToInput
+    if (a && b && compareIsoDates(a, b) > 0) {
+      ;[a, b] = [b, a]
     }
-    const n = Number(preset)
-    if (!endDate || Number.isNaN(n)) return { dateFrom: '', dateTo: '' }
-    return inclusiveRangeEndingAt(endDate, n)
-  }, [preset, endDate, customFrom, customTo])
+    return { dateFrom: a, dateTo: b }
+  }, [dateFromInput, dateToInput])
 
   const rangeReady = Boolean(dateFrom && dateTo)
   const { data: logs = [], isLoading: loadingLogs } = useFoodLogsForUser(userId, {
@@ -97,6 +94,50 @@ export function FoodLogMonitor() {
   })
 
   const selectedClient = clients.find((c) => c.id === userId)
+
+  const saveEvaluation = useMutation({
+    mutationFn: async () => {
+      if (!userId) throw new Error('Pilih klien terlebih dahulu.')
+      if (!rangeReady) throw new Error('Tanggal mulai dan selesai wajib diisi.')
+
+      const veg = vegTimesPerDay === '' ? null : Number(vegTimesPerDay)
+      const bmiNum = bmi === '' ? null : Number(bmi)
+      if (veg != null && (!Number.isFinite(veg) || veg < 0)) {
+        throw new Error('Konsumsi sayur harus berupa angka >= 0.')
+      }
+      if (bmiNum != null && (!Number.isFinite(bmiNum) || bmiNum <= 0)) {
+        throw new Error('BMI harus berupa angka > 0.')
+      }
+
+      const payload = {
+        user_id: userId,
+        date_from: dateFrom,
+        date_to: dateTo,
+        exercise_freq: exerciseFreq.trim() || null,
+        sleep_enough: sleepEnough === '' ? null : sleepEnough === 'yes',
+        veg_times_per_day: veg,
+        usage_notes: usageNotes.trim() || null,
+        bmi: bmiNum,
+        created_by: staff?.id ?? null,
+      }
+
+      const { error } = await supabase.from('user_evaluations').insert(payload)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toast.success('Evaluasi disimpan.')
+      qc.invalidateQueries({ queryKey: ['user_evaluations', userId] })
+      setExerciseFreq('')
+      setSleepEnough('')
+      setVegTimesPerDay('')
+      setUsageNotes('')
+      setBmi('')
+    },
+    onError: (e) => {
+      toast.error(e.message ?? 'Gagal menyimpan evaluasi.')
+      console.error(e)
+    },
+  })
 
   return (
     <AppShell>
@@ -124,8 +165,7 @@ export function FoodLogMonitor() {
           <CardHeader className="border-b border-border/60 py-3 sm:py-4">
             <CardTitle className="text-base sm:text-lg">Filter</CardTitle>
             <CardDescription className="text-xs leading-relaxed sm:text-sm">
-              Rentang dihitung inklusif. Preset seperti &quot;10 hari&quot; berarti 10 hari kalender
-              diakhiri pada tanggal &quot;Sampai tanggal&quot; — cocok untuk tinjauan berkala.
+              Pilih rentang tanggal untuk menganalisis entri makan tanpa memuat seluruh riwayat.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-2.5 sm:space-y-4 sm:pt-3">
@@ -153,74 +193,37 @@ export function FoodLogMonitor() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="monitor-preset" className={FILTER_LABEL_CLASS}>
-                  Jumlah hari
-                </Label>
-                <Select value={preset} onValueChange={setPreset}>
-                  <SelectTrigger id="monitor-preset" className={FILTER_SELECT_TRIGGER_CLASS}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className={FILTER_SELECT_CONTENT_CLASS}>
-                    {PRESETS.map((p) => (
-                      <SelectItem key={p.value} value={p.value} className={FILTER_SELECT_ITEM_CLASS}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {preset !== 'custom' ? (
-              <div className="space-y-1.5 sm:max-w-xs">
-                <Label htmlFor="monitor-end" className={FILTER_LABEL_CLASS}>
-                  Sampai tanggal
+                <Label htmlFor="monitor-from" className={FILTER_LABEL_CLASS}>
+                  Tanggal mulai
                 </Label>
                 <DatePicker
-                  id="monitor-end"
-                  value={endDate}
-                  onChange={(v) => setEndDate(v || toIsoDateLocal(new Date()))}
-                  placeholder="Tanggal akhir rentang"
+                  id="monitor-from"
+                  value={dateFromInput}
+                  onChange={setDateFromInput}
+                  placeholder="Mulai"
                   className={FILTER_DATE_CLASS}
                 />
               </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="monitor-from" className={FILTER_LABEL_CLASS}>
-                    Tanggal mulai
-                  </Label>
-                  <DatePicker
-                    id="monitor-from"
-                    value={customFrom}
-                    onChange={setCustomFrom}
-                    placeholder="Mulai"
-                    className={FILTER_DATE_CLASS}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="monitor-to" className={FILTER_LABEL_CLASS}>
-                    Tanggal selesai
-                  </Label>
-                  <DatePicker
-                    id="monitor-to"
-                    value={customTo}
-                    onChange={setCustomTo}
-                    placeholder="Selesai"
-                    className={FILTER_DATE_CLASS}
-                  />
-                </div>
-              </div>
-            )}
+            </div>
+
+            <div className="space-y-1.5 sm:max-w-xs">
+              <Label htmlFor="monitor-to" className={FILTER_LABEL_CLASS}>
+                Tanggal selesai
+              </Label>
+              <DatePicker
+                id="monitor-to"
+                value={dateToInput}
+                onChange={(v) => setDateToInput(v || toIsoDateLocal(new Date()))}
+                placeholder="Selesai"
+                className={FILTER_DATE_CLASS}
+              />
+            </div>
 
             {selectedClient && rangeReady ? (
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" className="font-normal">
                   {formatDateId(dateFrom)} — {formatDateId(dateTo)}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {preset === 'custom' ? 'Rentang kustom' : `${preset} hari kalender`}
-                </span>
               </div>
             ) : null}
 
@@ -232,6 +235,105 @@ export function FoodLogMonitor() {
                 </Link>
               </Button>
             ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className={cn('border-border/80 shadow-sm md:rounded-xl', MOBILE_DASHBOARD_CARD_SHELL)}>
+          <CardHeader className="border-b border-border/60 py-3 sm:py-4">
+            <CardTitle className="text-base sm:text-lg">Evaluasi rutin</CardTitle>
+            <CardDescription className="text-xs leading-relaxed sm:text-sm">
+              Untuk admin & ahli gizi. Evaluasi ini akan tampil di halaman progres klien.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-3">
+            {!userId ? (
+              <p className="text-sm text-muted-foreground">Pilih klien terlebih dahulu.</p>
+            ) : !rangeReady ? (
+              <p className="text-sm text-muted-foreground">Lengkapi tanggal mulai dan selesai.</p>
+            ) : (
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  saveEvaluation.mutate()
+                }}
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="eval-exercise" className={FILTER_LABEL_CLASS}>
+                      Frekuensi olahraga
+                    </Label>
+                    <Input
+                      id="eval-exercise"
+                      value={exerciseFreq}
+                      onChange={(e) => setExerciseFreq(e.target.value)}
+                      placeholder="Contoh: 3x/minggu"
+                      className="h-10 md:h-9"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="eval-sleep" className={FILTER_LABEL_CLASS}>
+                      Istirahat cukup
+                    </Label>
+                    <Select value={sleepEnough} onValueChange={setSleepEnough}>
+                      <SelectTrigger id="eval-sleep" className="h-10 md:h-9">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        <SelectItem value="yes">Ya</SelectItem>
+                        <SelectItem value="no">Tidak</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="eval-veg" className={FILTER_LABEL_CLASS}>
+                      Konsumsi sayur (kali/hari)
+                    </Label>
+                    <Input
+                      id="eval-veg"
+                      inputMode="numeric"
+                      value={vegTimesPerDay}
+                      onChange={(e) => setVegTimesPerDay(e.target.value)}
+                      placeholder="0"
+                      className="h-10 md:h-9"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="eval-bmi" className={FILTER_LABEL_CLASS}>
+                      BMI
+                    </Label>
+                    <Input
+                      id="eval-bmi"
+                      inputMode="decimal"
+                      value={bmi}
+                      onChange={(e) => setBmi(e.target.value)}
+                      placeholder="Contoh: 23.5"
+                      className="h-10 md:h-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="eval-notes" className={FILTER_LABEL_CLASS}>
+                    Catatan Konsumsi Pemakaian
+                  </Label>
+                  <Textarea
+                    id="eval-notes"
+                    rows={3}
+                    value={usageNotes}
+                    onChange={(e) => setUsageNotes(e.target.value)}
+                    placeholder="Catatan evaluasi…"
+                  />
+                </div>
+
+                <Button type="submit" size="sm" disabled={!userId || !rangeReady}>
+                  {saveEvaluation.isPending ? 'Menyimpan…' : 'Simpan evaluasi'}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
 

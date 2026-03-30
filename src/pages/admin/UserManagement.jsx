@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ChevronRight } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,9 +33,8 @@ import {
 } from '@/components/ui/table'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { formatDateId } from '@/lib/format'
-import { ADMIN_TABLE_CARD_SHELL } from '@/lib/pageCard'
+import { roleLabel, USERS_PAGE_SIZE } from '@/lib/adminUsers'
 import { supabase } from '@/lib/supabase'
-import { cn } from '@/lib/utils'
 
 function randomPassword() {
   const chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -45,6 +45,7 @@ function randomPassword() {
 }
 
 export function UserManagement() {
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['profiles_admin'],
@@ -58,6 +59,40 @@ export function UserManagement() {
     },
   })
 
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return users
+    return users.filter(
+      (u) =>
+        (u.nama || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.instalasi || '').toLowerCase().includes(q) ||
+        (u.nomor_wa || '').toLowerCase().includes(q),
+    )
+  }, [users, search])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / USERS_PAGE_SIZE))
+
+  const pageSlice = useMemo(() => {
+    const start = (page - 1) * USERS_PAGE_SIZE
+    return filtered.slice(start, start + USERS_PAGE_SIZE)
+  }, [filtered, page])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search])
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount)
+  }, [page, pageCount])
+
+  const displayStart = filtered.length === 0 ? 0 : (page - 1) * USERS_PAGE_SIZE + 1
+  const displayEnd =
+    filtered.length === 0 ? 0 : (page - 1) * USERS_PAGE_SIZE + pageSlice.length
+
   const [openAdd, setOpenAdd] = useState(false)
   const [openPw, setOpenPw] = useState('')
   const [form, setForm] = useState({
@@ -68,8 +103,6 @@ export function UserManagement() {
     role: 'klien',
     password: '',
   })
-
-  const [editRow, setEditRow] = useState(null)
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -108,125 +141,208 @@ export function UserManagement() {
     },
   })
 
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          nama: editRow.nama,
-          nomor_wa: editRow.nomor_wa || null,
-          instalasi: editRow.instalasi || null,
-          role: editRow.role,
-        })
-        .eq('id', editRow.id)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      toast.success('Perubahan disimpan.')
-      setEditRow(null)
-      qc.invalidateQueries({ queryKey: ['profiles_admin'] })
-      qc.invalidateQueries({ queryKey: ['client_directory'] })
-    },
-    onError: (e) => toast.error(e.message ?? 'Gagal menyimpan.'),
-  })
-
-  const toggleActive = useMutation({
-    mutationFn: async ({ id, is_active }) => {
-      const { error } = await supabase.from('profiles').update({ is_active }).eq('id', id)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['profiles_admin'] })
-      qc.invalidateQueries({ queryKey: ['client_directory'] })
-      toast.success('Status diperbarui.')
-    },
-    onError: (e) => toast.error(e.message ?? 'Gagal.'),
-  })
-
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl space-y-5 md:space-y-6">
-        <div className="max-md:px-0.5">
-          <h1 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">User</h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:mt-1.5">
-            Kelola akun, peran, dan status aktif. Gunakan impor Excel untuk menambah banyak klien sekaligus.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
-          <Button variant="outline" asChild className="w-full sm:w-auto">
-            <Link to="/admin/import">Impor Excel</Link>
-          </Button>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => {
-              setForm((f) => ({ ...f, password: randomPassword() }))
-              setOpenAdd(true)
-            }}
-          >
-            Tambah pengguna
-          </Button>
-        </div>
-
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <Card className={cn('overflow-hidden', ADMIN_TABLE_CARD_SHELL)}>
+      <div className="mx-auto max-w-6xl">
+        <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-sm ring-1 ring-black/[0.04]">
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Instalasi</TableHead>
-                <TableHead>WA</TableHead>
-                <TableHead>Peran</TableHead>
-                <TableHead>Terdaftar</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell>{u.nama}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>{u.instalasi ?? '—'}</TableCell>
-                  <TableCell>{u.nomor_wa ?? '—'}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{u.role}</Badge>
-                  </TableCell>
-                  <TableCell>{formatDateId(u.created_at?.slice(0, 10))}</TableCell>
-                  <TableCell>
-                    {u.is_active === false ? (
-                      <Badge variant="destructive">Nonaktif</Badge>
-                    ) : (
-                      <Badge>Aktif</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="space-x-2 whitespace-nowrap">
-                    <Button variant="outline" size="sm" onClick={() => setEditRow({ ...u })}>
-                      Ubah
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        toggleActive.mutate({ id: u.id, is_active: u.is_active === false })
-                      }
-                    >
-                      {u.is_active === false ? 'Aktifkan' : 'Nonaktifkan'}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            <div className="p-4 md:p-5">
+              <div>
+                <h1 className="text-lg font-semibold tracking-tight sm:text-xl">User</h1>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:mt-1.5">
+                  Daftar ringkas; ketuk atau klik baris untuk detail dan tindakan. Impor massal lewat
+                  Excel.
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 sm:mt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
+                <Button variant="outline" asChild className="w-full sm:w-auto">
+                  <Link to="/admin/import">Impor Excel</Link>
+                </Button>
+                <Button
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setForm((f) => ({ ...f, password: randomPassword() }))
+                    setOpenAdd(true)
+                  }}
+                >
+                  Tambah pengguna
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t border-border/60 bg-background">
+              <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:px-5">
+                <Input
+                  type="search"
+                  placeholder="Cari nama, email, instalasi, WA…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-9 w-full border-input bg-background text-foreground shadow-sm sm:max-w-md"
+                  autoComplete="off"
+                />
+                <p className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {filtered.length} cocok
+                  {search ? ` · ${users.length} total` : ''}
+                </p>
+              </div>
+
+              {isLoading ? (
+                <div className="border-t border-border/60 py-12">
+                  <LoadingSpinner />
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="border-t border-border/60 px-4 py-10 text-center text-sm text-muted-foreground md:px-5">
+                  {users.length === 0 ? 'Belum ada pengguna.' : 'Tidak ada yang cocok dengan pencarian.'}
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-border border-t border-border/60 md:hidden">
+                    {pageSlice.map((u) => (
+                      <Link
+                        key={u.id}
+                        to={`/admin/users/${u.id}`}
+                        className="flex min-h-10 items-center gap-2 bg-card px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50 active:bg-muted/70"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span className="truncate font-medium text-foreground">{u.nama}</span>
+                            <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px]">
+                              {roleLabel(u.role)}
+                            </Badge>
+                            {u.is_active === false ? (
+                              <Badge variant="destructive" className="px-1.5 py-0 text-[10px]">
+                                Nonaktif
+                              </Badge>
+                            ) : (
+                              <Badge className="shrink-0 bg-primary/12 px-1.5 py-0 text-[10px] text-primary">
+                                Aktif
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground" title={u.email}>
+                            {u.email}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="hidden border-t border-border/60 md:block">
+                    <div className="max-h-[min(70vh,720px)] overflow-auto bg-card">
+                      <Table className="text-xs">
+                        <TableHeader className="sticky top-0 z-[1] bg-table-header shadow-[0_1px_0_0_var(--color-table-line)]">
+                          <TableRow className="border-table-line hover:bg-transparent">
+                            <TableHead className="h-8 w-[28%] min-w-[8rem] py-1.5 pl-3 pr-1 font-semibold text-table-header-foreground">
+                              Nama
+                            </TableHead>
+                            <TableHead className="h-8 min-w-[10rem] py-1.5 px-1 font-semibold text-table-header-foreground">
+                              Email
+                            </TableHead>
+                            <TableHead className="h-8 w-[7rem] py-1.5 px-1 font-semibold text-table-header-foreground">
+                              Peran
+                            </TableHead>
+                            <TableHead className="h-8 w-[5.5rem] py-1.5 px-1 font-semibold text-table-header-foreground">
+                              Status
+                            </TableHead>
+                            <TableHead className="h-8 w-[6.5rem] py-1.5 px-1 font-semibold text-table-header-foreground">
+                              Terdaftar
+                            </TableHead>
+                            <TableHead className="h-8 w-8 p-1 pr-2" aria-hidden />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pageSlice.map((u) => (
+                            <TableRow
+                              key={u.id}
+                              role="link"
+                              tabIndex={0}
+                              className="cursor-pointer border-table-line hover:bg-table-row-hover"
+                              onClick={() => navigate(`/admin/users/${u.id}`)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  navigate(`/admin/users/${u.id}`)
+                                }
+                              }}
+                            >
+                              <TableCell className="py-1.5 pl-3 pr-1 font-medium">
+                                <span className="line-clamp-2">{u.nama}</span>
+                              </TableCell>
+                              <TableCell className="max-w-0 py-1.5 px-1">
+                                <span className="block truncate text-muted-foreground" title={u.email}>
+                                  {u.email}
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-1.5 px-1">
+                                <Badge variant="secondary" className="font-normal">
+                                  {roleLabel(u.role)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-1.5 px-1">
+                                {u.is_active === false ? (
+                                  <Badge variant="destructive" className="text-[10px]">
+                                    Off
+                                  </Badge>
+                                ) : (
+                                  <Badge className="text-[10px]">Aktif</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap py-1.5 px-1 text-muted-foreground">
+                                {formatDateId(u.created_at?.slice(0, 10))}
+                              </TableCell>
+                              <TableCell className="py-1 pr-2 pl-0">
+                                <ChevronRight
+                                  className="mx-auto h-3.5 w-3.5 text-muted-foreground"
+                                  aria-hidden
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 border-t border-border/60 bg-background px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between md:px-5">
+                    <span className="tabular-nums text-foreground">
+                      Menampilkan {displayStart}–{displayEnd} dari {filtered.length} · {USERS_PAGE_SIZE}{' '}
+                      per halaman
+                    </span>
+                    {pageCount > 1 ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 bg-background"
+                          disabled={page <= 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        >
+                          Sebelumnya
+                        </Button>
+                        <span className="tabular-nums text-foreground">
+                          Hal {page} / {pageCount}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 bg-background"
+                          disabled={page >= pageCount}
+                          onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                        >
+                          Berikutnya
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
       </div>
 
       <Dialog open={openAdd} onOpenChange={setOpenAdd}>
@@ -311,63 +427,6 @@ export function UserManagement() {
             Kata sandi ini hanya ditampilkan sekali. Salin dan bagikan dengan pengguna.
           </p>
           <Input readOnly value={openPw} className="font-mono" />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={Boolean(editRow)} onOpenChange={() => setEditRow(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Ubah pengguna</DialogTitle>
-          </DialogHeader>
-          {editRow && (
-            <div className="grid gap-3 py-2">
-              <div className="space-y-1">
-                <Label>Nama</Label>
-                <Input
-                  value={editRow.nama}
-                  onChange={(e) => setEditRow((r) => ({ ...r, nama: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>WA</Label>
-                <Input
-                  value={editRow.nomor_wa ?? ''}
-                  onChange={(e) => setEditRow((r) => ({ ...r, nomor_wa: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Instalasi</Label>
-                <Input
-                  value={editRow.instalasi ?? ''}
-                  onChange={(e) => setEditRow((r) => ({ ...r, instalasi: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Peran</Label>
-                <Select
-                  value={editRow.role}
-                  onValueChange={(v) => setEditRow((r) => ({ ...r, role: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">admin</SelectItem>
-                    <SelectItem value="ahli_gizi">ahli_gizi</SelectItem>
-                    <SelectItem value="klien">klien</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditRow(null)}>
-              Batal
-            </Button>
-            <Button disabled={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
-              Simpan
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>
