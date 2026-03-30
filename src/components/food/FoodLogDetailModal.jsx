@@ -69,11 +69,11 @@ export function FoodLogDetailModal({ open, onOpenChange, tanggal, logsByMeal, it
     }
 
     return (
-      <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-amber-200/50 bg-amber-50/40 shadow-sm ring-1 ring-amber-200/25">
         <div className="max-h-[min(55dvh,420px)] overflow-y-auto overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="border-amber-200/50 bg-amber-50/70 hover:bg-amber-50/80">
                 <TableHead>Makanan</TableHead>
                 <TableHead className="text-center">Jml</TableHead>
                 <TableHead className="text-center">Satuan</TableHead>
@@ -82,7 +82,10 @@ export function FoodLogDetailModal({ open, onOpenChange, tanggal, logsByMeal, it
             </TableHeader>
             <TableBody>
               {items.map((it) => (
-                <TableRow key={it.id}>
+                <TableRow
+                  key={it.id}
+                  className="border-amber-100/60 bg-amber-50/85 hover:bg-amber-50 data-[state=selected]:bg-amber-100/50"
+                >
                   <TableCell className="max-w-[40%]">{it.nama_makanan}</TableCell>
                   <TableCell className="text-center tabular-nums">{formatNumberId(it.jumlah)}</TableCell>
                   <TableCell className="text-center text-sm">{it.unit_nama}</TableCell>

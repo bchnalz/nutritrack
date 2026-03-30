@@ -28,6 +28,20 @@ const WAKTU_LABELS = {
   snack: 'Snack',
 }
 
+/** Light yellow accent for generated meal-log rows / cells (Pantau log, klien dashboard). */
+const MEAL_LOG_DAY_SURFACE = cn(
+  'border-amber-200/55 bg-amber-50/95 text-card-foreground ring-1 ring-amber-200/35',
+  'hover:border-amber-300/55 hover:bg-amber-50',
+)
+const MEAL_LOG_MEAL_CELL_FILLED = cn(
+  'border-amber-200/50 bg-amber-100/55 ring-1 ring-amber-200/25',
+  'group-hover:bg-amber-100/70',
+)
+const MEAL_LOG_TABLE_ROW = cn(
+  'border-amber-100/70 bg-amber-50/90 hover:bg-amber-50',
+  'data-[state=selected]:bg-amber-100/60',
+)
+
 function groupLogsByDate(logs) {
   const map = new Map()
   for (const log of logs ?? []) {
@@ -101,8 +115,8 @@ export function FoodLogTable({ logs, pageSize = 10, embedded = false }) {
                 className={cn(
                   'group w-full cursor-pointer touch-manipulation select-none text-left outline-none transition-[transform,box-shadow,border-color] duration-200',
                   MEAL_LOG_DAY_CARD_RADIUS_CLASS,
-                  'border border-border bg-card p-3.5 text-card-foreground shadow-sm ring-1 ring-black/[0.04]',
-                  'hover:border-primary/30 hover:shadow-md',
+                  'border p-3.5 shadow-sm',
+                  MEAL_LOG_DAY_SURFACE,
                   'active:scale-[0.99]',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 )}
@@ -131,8 +145,10 @@ export function FoodLogTable({ logs, pageSize = 10, embedded = false }) {
                     <div
                       key={k}
                       className={cn(
-                        'min-w-0 rounded-xl border border-border bg-muted px-1 py-2 text-center',
-                        'transition-colors group-hover:bg-muted/90',
+                        'min-w-0 rounded-xl border px-1 py-2 text-center transition-colors',
+                        vals[i] != null
+                          ? MEAL_LOG_MEAL_CELL_FILLED
+                          : 'border-border bg-muted group-hover:bg-muted/90',
                       )}
                     >
                       <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -174,7 +190,7 @@ export function FoodLogTable({ logs, pageSize = 10, embedded = false }) {
                 {slice.map((tanggal) => {
                   const { vals, total } = dayStats(byDate, tanggal)
                   return (
-                    <TableRow key={tanggal}>
+                    <TableRow key={tanggal} className={MEAL_LOG_TABLE_ROW}>
                       <TableCell>{formatDateId(tanggal)}</TableCell>
                       {vals.map((v, i) => (
                         <TableCell key={i} className="text-right tabular-nums">

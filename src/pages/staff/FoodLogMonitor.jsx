@@ -37,13 +37,14 @@ const STAFF_LOG_STALE_MS = 10 * 60 * 1000
 
 /** Compact filter row: smaller type + shorter controls (scoped to this page). */
 const FILTER_LABEL_CLASS = 'text-xs font-medium leading-snug sm:text-sm'
-/** Klien + Jumlah hari selects: smallest trigger text, tight line-height. */
+/** Klien + Jumlah hari: smaller text only in the closed field ([&>span] = SelectValue); dropdown list stays normal. */
 const FILTER_SELECT_TRIGGER_CLASS = cn(
-  'h-7 min-h-0 w-full gap-1 px-2 py-0.5 text-xs leading-none md:h-7',
-  '[&_svg]:h-3 [&_svg]:w-3 [&_svg]:shrink-0',
+  'h-8 min-h-0 w-full gap-1.5 px-2.5 py-1 md:h-8',
+  '[&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0',
+  '[&>span]:text-xs [&>span]:leading-tight',
 )
-const FILTER_SELECT_CONTENT_CLASS = 'max-h-72 text-xs'
-const FILTER_SELECT_ITEM_CLASS = 'py-1 pl-2 pr-8 text-xs leading-tight sm:py-1'
+const FILTER_SELECT_CONTENT_CLASS = 'max-h-72 text-sm'
+const FILTER_SELECT_ITEM_CLASS = 'py-1.5 pl-2 pr-8 text-sm sm:py-1.5'
 const FILTER_DATE_CLASS = cn(
   'h-8 min-h-0 w-full justify-start gap-1.5 rounded-md px-2.5 py-0 text-sm font-normal leading-tight md:h-8',
   '[&_svg]:mr-1.5 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0',
@@ -127,9 +128,9 @@ export function FoodLogMonitor() {
               diakhiri pada tanggal &quot;Sampai tanggal&quot; — cocok untuk tinjauan berkala.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 pt-4 sm:space-y-4 sm:pt-6">
-            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-4">
-              <div className="space-y-1">
+          <CardContent className="space-y-3 pt-2.5 sm:space-y-4 sm:pt-3">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <div className="space-y-1.5">
                 <Label htmlFor="monitor-client" className={FILTER_LABEL_CLASS}>
                   Klien
                 </Label>
@@ -151,7 +152,7 @@ export function FoodLogMonitor() {
                 </Select>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label htmlFor="monitor-preset" className={FILTER_LABEL_CLASS}>
                   Jumlah hari
                 </Label>
@@ -184,7 +185,7 @@ export function FoodLogMonitor() {
                 />
               </div>
             ) : (
-              <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-4">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="monitor-from" className={FILTER_LABEL_CLASS}>
                     Tanggal mulai
