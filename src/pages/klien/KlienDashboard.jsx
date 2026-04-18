@@ -1,5 +1,6 @@
 import { AppShell } from '@/components/layout/AppShell'
 import { ClientNutritionSummaryCard } from '@/components/clients/ClientNutritionSummaryCard'
+import { DailyCalorieChart } from '@/components/dashboard/DailyCalorieChart'
 import { FoodLogTable } from '@/components/food/FoodLogTable'
 import { KLIEN_DASHBOARD_LOG_CARD_SHELL } from '@/lib/pageCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
@@ -20,6 +21,9 @@ export function KlienDashboard() {
       <div className="mx-auto max-w-5xl -mt-2 space-y-4 sm:space-y-5">
         <section aria-label="Ringkasan gizi dan kebutuhan kalori">
           <ClientNutritionSummaryCard profile={profile} />
+        </section>
+        <section aria-label="Grafik kalori 30 hari terakhir">
+          <DailyCalorieChart userId={profile?.id} />
         </section>
         <section aria-label="Log makanan">
           <Card className={KLIEN_DASHBOARD_LOG_CARD_SHELL}>
