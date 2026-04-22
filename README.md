@@ -83,6 +83,15 @@ Never expose `OPENAI_API_KEY` via a `VITE_*` variable. See `.env.example` for de
 | `npm run build` | Production bundle |
 | `npm run preview` | Preview production build |
 | `npm run lint` | ESLint |
+| `npm test` | Run Vitest suite once |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run test:coverage` | Coverage report (HTML + lcov in `coverage/`) |
+
+## Testing
+
+Vitest 4 + React Testing Library + jsdom. Tests colocate with source files (`*.test.js` / `*.test.jsx`). See [AGENTS.md](AGENTS.md) for when tests are required, shared helpers, and naming conventions.
+
+Pre-commit gate: run `npm run lint` and `npm test` locally — both must pass before committing or pushing.
 
 ## Project structure
 

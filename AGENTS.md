@@ -96,8 +96,37 @@ Add new pages in the appropriate role folder. Add new shared components to `src/
 
 ## Testing
 
-No test framework is configured yet. Skip generating test files unless explicitly requested.
+**Stack**: Vitest 4 + `@testing-library/react` + `@testing-library/user-event` + `@testing-library/jest-dom` + jsdom. Config in `vitest.config.js`; global setup in `src/test/setup.js`.
 
-## Linting
+**File location**: colocate `*.test.js` / `*.test.jsx` next to the source file, e.g. `src/lib/bmiCalculator.test.js`, `src/hooks/useFoodLog.test.js`, `src/components/food/FoodEntryForm.test.jsx`.
 
-ESLint 9 flat config (`eslint.config.js`). Run `npm run lint` before committing. Fix all reported errors; do not suppress rules without discussion.
+**Shared helpers** (always use these instead of ad-hoc mocks):
+
+- `src/test/renderWithProviders.jsx` — renders with Router + QueryClient.
+- `src/test/queryWrapper.jsx` — wraps hooks with a QueryClient.
+- `src/test/supabaseMock.js` — Supabase client mock.
+
+**When tests are required** — on any add / change / remove of a feature:
+
+- Mandatory for `src/lib/**` and `src/hooks/**` (coverage scope in `vitest.config.js`).
+- Required for components with non-trivial behavior: forms, role/permission gates, state transitions.
+- Not required for pure style/markup tweaks, copy changes, or doc edits.
+
+**Bug fixes**: add a regression test that fails before the fix and passes after.
+
+**Commands**:
+
+| Command | Use |
+|---------|-----|
+| `npm test` | Full suite once (CI equivalent) |
+| `npm run test:watch` | TDD watch loop |
+| `npm run test:coverage` | Coverage report in `coverage/` (HTML + lcov) |
+| `npm run test:related` | Only tests related to changed files |
+
+## Pre-commit checklist
+
+Before every commit and push:
+
+1. `npm run lint` — must exit clean. No `eslint-disable` without a justification in the PR description.
+2. `npm test` — all tests must be green. Intentionally skipped tests require an explanation.
+3. Commit and push only after both pass locally.
