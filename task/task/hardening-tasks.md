@@ -21,22 +21,20 @@ The current security baseline includes Supabase RLS on all tables, server-only O
 | 2 | Fix `food_name_suggestions` cross-user leak | High | 1 | Database |
 | 3 | Add security headers to `vercel.json` | High | 1 | Deployment |
 | 4 | Restrict Edge Function CORS to production origin | High | 1 | Edge Function |
-| 5 | Harden Edge Function against prompt injection | Medium | 2 | Edge Function |
-| 6 | Add idle session timeout | Medium | 2 | Frontend |
-| 7 | Add login attempt throttling | Low | 2 | Frontend |
-| 8 | Add Zod validation schemas for forms | Medium | 3 | Frontend |
-| 9 | Dependency audit | Low | 3 | Ops |
-| 10 | Sanitize error output for production | Low | 3 | Frontend |
-| 11 | Audit staff write access to `food_logs` | Low | 3 | Database |
-| 12 | Audit `anon` role grants | Low | 3 | Database |
+| 5 | Harden Edge Function against prompt injection | Medium | 1 | Edge Function |
+| 6 | Add idle session timeout | Medium | 1 | Frontend |
+| 7 | Add login attempt throttling | Low | 1 | Frontend |
+| 8 | Add Zod validation schemas for forms | Medium | 1 | Frontend |
+| 9 | Dependency audit | Low | 1 | Ops |
+| 10 | Sanitize error output for production | Low | 1 | Frontend |
+| 11 | Audit staff write access to `food_logs` | Low | 1 | Database |
+| 12 | Audit `anon` role grants | Low | 1 | Database |
 
 ## Sprint Plan
 
 | Sprint | Focus | Duration | Tasks |
 |--------|-------|----------|-------|
-| [Sprint 1](sprint-1.md) | Critical fixes & infrastructure | 1 week | 1, 2, 3, 4 |
-| [Sprint 2](sprint-2.md) | Auth hardening & prompt safety | 1 week | 5, 6, 7 |
-| [Sprint 3](sprint-3.md) | Validation, audit & cleanup | 1 week | 8, 9, 10, 11, 12 |
+| [Sprint 1](sprint-1.md) | Full security hardening | 1 week | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
 
 ---
 
