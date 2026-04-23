@@ -1,4 +1,4 @@
-# AGENTS.md — NutriTrack / PER
+# AGENTS.md — NutriTrack / LAPER
 
 Coding conventions and project context for AI coding agents (Cursor, Copilot, etc.).
 
@@ -16,11 +16,11 @@ Coding conventions and project context for AI coding agents (Cursor, Copilot, et
 
 ```js
 // Good
-import { cn } from '@/lib/utils'
-import { useAuth } from '@/hooks/useAuth'
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 // Bad
-import { cn } from '../../lib/utils'
+import { cn } from "../../lib/utils";
 ```
 
 ## Styling
@@ -66,13 +66,13 @@ Add new pages in the appropriate role folder. Add new shared components to `src/
 
 ## Naming conventions
 
-| Thing | Convention | Example |
-|-------|-----------|---------|
-| Components | PascalCase | `FoodLogTable.jsx` |
-| Hooks | `use` prefix, camelCase | `useFoodLog.js` |
-| Utilities / helpers | camelCase | `bmiCalculator.js`, `format.js` |
-| DB columns / Supabase fields | Indonesian snake_case | `nama_makanan`, `waktu_makan` |
-| React variables/props | English camelCase | `isLoading`, `onSubmit` |
+| Thing                        | Convention              | Example                         |
+| ---------------------------- | ----------------------- | ------------------------------- |
+| Components                   | PascalCase              | `FoodLogTable.jsx`              |
+| Hooks                        | `use` prefix, camelCase | `useFoodLog.js`                 |
+| Utilities / helpers          | camelCase               | `bmiCalculator.js`, `format.js` |
+| DB columns / Supabase fields | Indonesian snake_case   | `nama_makanan`, `waktu_makan`   |
+| React variables/props        | English camelCase       | `isLoading`, `onSubmit`         |
 
 ## UI language and formatting
 
@@ -116,12 +116,12 @@ Add new pages in the appropriate role folder. Add new shared components to `src/
 
 **Commands**:
 
-| Command | Use |
-|---------|-----|
-| `npm test` | Full suite once (CI equivalent) |
-| `npm run test:watch` | TDD watch loop |
+| Command                 | Use                                          |
+| ----------------------- | -------------------------------------------- |
+| `npm test`              | Full suite once (CI equivalent)              |
+| `npm run test:watch`    | TDD watch loop                               |
 | `npm run test:coverage` | Coverage report in `coverage/` (HTML + lcov) |
-| `npm run test:related` | Only tests related to changed files |
+| `npm run test:related`  | Only tests related to changed files          |
 
 ## Pre-commit checklist
 

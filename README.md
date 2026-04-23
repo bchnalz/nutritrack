@@ -1,25 +1,25 @@
-# PER — Laporan Asupan & Evaluasi Rutin
+# LAPER — Laporan Asupan & Evaluasi Rutin
 
 Role-based nutrition tracking web application for Indonesian clinical and institutional workflows. Connects clients (`klien`) with dietitians (`ahli_gizi`) and administrators (`admin`).
 
 ## Tech stack
 
-| Area | Technology |
-|------|-----------|
-| UI | React 19, React Router DOM 7 |
-| Server state | TanStack React Query 5 |
-| Styling | Tailwind CSS 4 (`@theme` in `src/index.css`), `tailwindcss-animate` |
-| UI primitives | Radix UI + local `src/components/ui/` (shadcn pattern) |
-| Charts | Recharts 3 |
-| Motion | Framer Motion 12 |
-| Dates | date-fns 4, react-day-picker 9 |
-| Notifications | Sonner |
-| Excel import | SheetJS (`xlsx`) |
-| Backend | Supabase (Auth, Postgres, RLS, Edge Functions) |
-| AI calorie estimation | OpenAI via Supabase Edge Function (`estimate-calories`) |
-| Build | Vite 8, `@vitejs/plugin-react` |
-| Lint | ESLint 9 flat config |
-| Deploy | Vercel (`vercel.json` SPA rewrite) |
+| Area                  | Technology                                                          |
+| --------------------- | ------------------------------------------------------------------- |
+| UI                    | React 19, React Router DOM 7                                        |
+| Server state          | TanStack React Query 5                                              |
+| Styling               | Tailwind CSS 4 (`@theme` in `src/index.css`), `tailwindcss-animate` |
+| UI primitives         | Radix UI + local `src/components/ui/` (shadcn pattern)              |
+| Charts                | Recharts 3                                                          |
+| Motion                | Framer Motion 12                                                    |
+| Dates                 | date-fns 4, react-day-picker 9                                      |
+| Notifications         | Sonner                                                              |
+| Excel import          | SheetJS (`xlsx`)                                                    |
+| Backend               | Supabase (Auth, Postgres, RLS, Edge Functions)                      |
+| AI calorie estimation | OpenAI via Supabase Edge Function (`estimate-calories`)             |
+| Build                 | Vite 8, `@vitejs/plugin-react`                                      |
+| Lint                  | ESLint 9 flat config                                                |
+| Deploy                | Vercel (`vercel.json` SPA rewrite)                                  |
 
 ## Getting started
 
@@ -36,14 +36,14 @@ The dev server runs on `http://localhost:5174` (strict port).
 
 ## Environment variables
 
-| Variable | Where | Required |
-|----------|-------|----------|
-| `VITE_SUPABASE_URL` | `.env` (browser) | Yes |
-| `VITE_SUPABASE_ANON_KEY` | `.env` (browser) | Yes |
-| `DEV_HMR_HOST` | `.env` (Vite only, no `VITE_` prefix) | No |
-| `OPENAI_API_KEY` | Supabase secrets / `supabase/.env.local` | Yes (server-side only) |
-| `OPENAI_MODEL` | Supabase secrets (optional) | No |
-| `ALLOWED_ORIGIN` | Supabase secrets (optional, defaults to `*` for local dev) | No |
+| Variable                 | Where                                                      | Required               |
+| ------------------------ | ---------------------------------------------------------- | ---------------------- |
+| `VITE_SUPABASE_URL`      | `.env` (browser)                                           | Yes                    |
+| `VITE_SUPABASE_ANON_KEY` | `.env` (browser)                                           | Yes                    |
+| `DEV_HMR_HOST`           | `.env` (Vite only, no `VITE_` prefix)                      | No                     |
+| `OPENAI_API_KEY`         | Supabase secrets / `supabase/.env.local`                   | Yes (server-side only) |
+| `OPENAI_MODEL`           | Supabase secrets (optional)                                | No                     |
+| `ALLOWED_ORIGIN`         | Supabase secrets (optional, defaults to `*` for local dev) | No                     |
 
 Never expose `OPENAI_API_KEY` via a `VITE_*` variable. See `.env.example` for details.
 
@@ -77,14 +77,14 @@ Never expose `OPENAI_API_KEY` via a `VITE_*` variable. See `.env.example` for de
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Vite dev server with `--host` |
-| `npm run build` | Production bundle |
-| `npm run preview` | Preview production build |
-| `npm run lint` | ESLint |
-| `npm test` | Run Vitest suite once |
-| `npm run test:watch` | Vitest watch mode |
+| Command                 | Description                                  |
+| ----------------------- | -------------------------------------------- |
+| `npm run dev`           | Vite dev server with `--host`                |
+| `npm run build`         | Production bundle                            |
+| `npm run preview`       | Preview production build                     |
+| `npm run lint`          | ESLint                                       |
+| `npm test`              | Run Vitest suite once                        |
+| `npm run test:watch`    | Vitest watch mode                            |
 | `npm run test:coverage` | Coverage report (HTML + lcov in `coverage/`) |
 
 ## Testing
@@ -122,11 +122,11 @@ supabase/
 
 ## Roles
 
-| Role | Code | Access |
-|------|------|--------|
-| Admin | `admin` | Full access: users, import, food units, client oversight |
+| Role      | Code        | Access                                                        |
+| --------- | ----------- | ------------------------------------------------------------- |
+| Admin     | `admin`     | Full access: users, import, food units, client oversight      |
 | Dietitian | `ahli_gizi` | Client lists, anthropometry, food log monitoring, evaluations |
-| Client | `klien` | Own food logs, progress charts, routine evaluations |
+| Client    | `klien`     | Own food logs, progress charts, routine evaluations           |
 
 Route guard (`RequireAuth` in `src/App.jsx`) requires a valid Supabase session, a loaded `profiles` row, and membership in the route's role allowlist. Inactive accounts (`is_active = false`) are signed out immediately.
 
