@@ -169,7 +169,15 @@ export function RegisterPage() {
     setBusy(false)
 
     if (error) {
-      toast.error(error.message)
+      // Handle rate limit error
+      if (
+        error.message?.toLowerCase().includes('rate limit') ||
+        error.message?.toLowerCase().includes('too many requests')
+      ) {
+        toast.error('Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi.')
+      } else {
+        toast.error(error.message)
+      }
     } else {
       setSent(true)
     }
