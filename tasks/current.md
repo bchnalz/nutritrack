@@ -4,28 +4,13 @@
 - [x] **LAPER-001**: Self-Registration for Klien (auto-activation on email confirmation)
 - [x] **LAPER-002**: Self-Registration for Ahli Gizi (pending approval screen + route guard)
 - [x] **LAPER-003**: Build shared registration form UI
+- [x] **REG-001**: Update registration mechanism — ALL users require admin approval
+- [x] **REG-002**: Build Admin User Management with approve/reject functionality
+
+---
 
 ## Active Work
-
-### Task: Adjust Registration Mechanism
-**Change Required:** Remove email confirmation flow. Users can login ONLY after admin approval.
-
-**Current Behavior (to change):**
-- Klien: auto-activated on registration (is_active=true)
-- Ahli Gizi: pending approval (is_active=false), can login after email confirm
-- Email confirmation triggers account creation
-
-**New Required Behavior:**
-- ALL registrations (Klien and Ahli Gizi) default to is_active=false
-- NO email confirmation needed
-- User cannot login until admin approves (sets is_active=true)
-- After admin approval, user can login with email + password
-
-**Implementation Steps:**
-1. Update `handle_new_user` trigger: set is_active=false for ALL roles
-2. Remove any email confirmation logic
-3. Ensure login flow blocks inactive users (already works via isInactive flag)
-4. Build Admin User Management (S-17) to approve/reject users
+None — registration flow is complete and committed.
 
 ---
 
@@ -37,11 +22,11 @@
 |----|-------------|--------|-------|
 | US-01 | Register with email, password, name, DOB, gender, WhatsApp | ✅ Done | Implemented in RegisterPage |
 | US-02 | Login and logout | ✅ Done | LoginPage existing, role-based redirect working |
-| US-03 | Admin approve/reject user registration | ❌ Todo | **HIGH PRIORITY** — S-17 screen needed |
+| US-03 | Admin approve/reject user registration | ✅ Done | **COMPLETED** — S-17 with filter tabs + inline approve/reject |
 | US-22 | Ahli Gizi register/login with nutritionist role | ✅ Done | Role selector in register |
 | US-38 | User cannot edit own profile; only admin/ahli gizi can | ⚠️ Partial | Route guard exists, but profile edit form not built |
 
-**Epic 1 Progress: 3/5 complete (60%)**
+**Epic 1 Progress: 4/5 complete (80%)**
 
 ---
 
@@ -83,11 +68,11 @@
 |----|-------------|--------|-------|
 | US-14 | Export all user data as CSV | ❌ Todo | S-18 screen not built |
 | US-15 | Filter CSV export by date range | ❌ Todo | Part of S-18 |
-| US-16 | List of all registered users | ❌ Todo | S-17 screen not built |
-| US-17 | Delete user account | ❌ Todo | Admin permission only |
+| US-16 | List of all registered users | ✅ Done | **COMPLETED** — S-17 with search + filter tabs |
+| US-17 | Delete user account | ✅ Done | **COMPLETED** — Reject button in S-17 |
 | US-37 | Admin/ahli gizi view and edit complete user profile | ❌ Todo | S-11 edit mode + S-12/13 assessment flow |
 
-**Epic 4 Progress: 0/5 complete (0%)**
+**Epic 4 Progress: 3/5 complete (60%)**
 
 ---
 
@@ -143,30 +128,24 @@
 | S-14 Evaluation History (AG) | `/evaluation/:userId/history` | ❌ Todo |
 | S-15 Evaluation History (User) | `/my-evaluations` | ❌ Todo |
 | S-16 Participant List | `/participants` | ❌ Todo |
-| S-17 Admin User Management | `/admin/users` | ⚠️ URGENT | ** Needed to approve registrations ** |
+| S-17 Admin User Management | `/admin/users` | ✅ Built |
 | S-18 Admin Export CSV | `/admin/export` | ❌ Todo |
 
-**Screens Complete: 3/18 (17%)**
+**Screens Complete: 4/18 (22%)**
 
 ---
 
-## Immediate Priority
+## Priority Next Steps
 
-### 1. Fix Registration Mechanism (Blocking)
-- [ ] Update `handle_new_user` trigger: set `is_active=false` for ALL roles
-- [ ] Remove any email confirmation dependencies
-- [ ] Test: register → cannot login → admin approves → can login
+Based on Sprint 1 goals (1 Mei 2026):
 
-### 2. Build Admin User Management (S-17) — Critical
-- [ ] List all users with status (pending/approved)
-- [ ] Approve button: sets is_active=true
-- [ ] Reject button: deletes user
-- [ ] Filter tabs: Semua / Pending / Approved
+**Sprint 1 — "Minimum Working Tracker"**
+- [ ] Food Log Entry (S-07) with multi-item dynamic entry
+- [ ] Food Log Receipt (S-08) with calorie/macros breakdown
+- [ ] User Dashboard (S-04) with today's log, summary, weekly chart
+- [ ] OpenAI integration for food calorie estimation
 
-### 3. Then continue with Sprint 1
-- [ ] Food Log Entry (S-07) with OpenAI integration
-- [ ] Food Log Receipt (S-08)
-- [ ] User Dashboard (S-04)
+**Immediate Next:** Build Food Log Entry (S-07) as it's the core value proposition.
 
 ---
 
@@ -176,7 +155,7 @@ Current schema handles: profiles, body_measurements, food_units, food_logs, food
 
 **Missing for full features:**
 - `exercise_logs` table (US-40, S-10)
-- `assessment_sessions` proper structure (US-26, US-30, US-31)
+- `assessment_sessions` proper structure (US-26, US-30, US-31) — may need refactor of existing assessments table
 - `change_logs` or audit table (US-35)
 - `notifications` table (US-13, US-33)
 - `favorites` table (US-18)
@@ -184,16 +163,15 @@ Current schema handles: profiles, body_measurements, food_units, food_logs, food
 
 ---
 
-## Decisions Made
+## Recent Decisions
 - Registration form shared between Klien and Ahli Gizi roles
-- **NEW:** ALL registrations require admin approval (is_active=false initially)
-- **NEW:** No email confirmation needed
-- **NEW:** User cannot login until admin approves
+- **ALL registrations require admin approval (is_active=false initially)**
+- **No email confirmation needed**
+- **User cannot login until admin approves**
 - Inactive users redirected to /menunggu-persetujuan
+- Admin User Management (S-17) has filter tabs + inline approve/reject buttons
 - handle_new_user trigger stores jenis_kelamin, berat_badan, tinggi_badan
 - First body_measurements record auto-inserted on registration
 
 ## Next Session
-1. Update DB trigger to set is_active=false for ALL roles
-2. Build S-17 Admin User Management with approve/reject functionality
-3. Test full flow: register → pending → admin approves → login
+Start Sprint 1: Build Food Log Entry (S-07) with OpenAI integration for calorie estimation.
