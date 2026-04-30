@@ -124,6 +124,31 @@ export function RegisterPage() {
     }
 
     setBusy(true)
+
+    // Check if email already exists in profiles
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('email, is_active, nama')
+      .eq('email', form.email.trim())
+      .maybeSingle()
+
+    if (existingProfile) {
+      setBusy(false)
+      if (existingProfile.is_active === false) {
+        toast.error(
+          'Email ini sudah terdaftar tapi belum diverifikasi admin. Hubungi admin untuk aktivasi.',
+        )
+        setErrors((e) => ({
+          ...e,
+          email: 'Email ini sudah terdaftar tapi belum diverifikasi admin',
+        }))
+      } else {
+        toast.error('Email ini sudah terdaftar. Silakan masuk dengan akun Anda.')
+        setErrors((e) => ({ ...e, email: 'Email sudah terdaftar' }))
+      }
+      return
+    }
+
     const { error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
@@ -144,12 +169,7 @@ export function RegisterPage() {
     setBusy(false)
 
     if (error) {
-      if (error.message.includes('already registered') || error.code === 'user_already_exists') {
-        toast.error('Email sudah terdaftar')
-        setErrors((e) => ({ ...e, email: 'Email sudah terdaftar' }))
-      } else {
-        toast.error(error.message)
-      }
+      toast.error(error.message)
     } else {
       setSent(true)
     }
